@@ -108,10 +108,18 @@ def _trace_to_arviz(traces, n_tune, shapes, **kwargs):
             data = np.zeros((n_chains, length, *last_shape), dtype=dtype)
 
         for i, chunk in enumerate(col.chunks):
+            if name == "mass_matrix_eigenvals":
+                chunk = np.array([
+                    np.array([None]) if val is None else val 
+                    for val in chunk
+                ], dtype=dtype)
             if hasattr(chunk, "values"):
                 values = chunk.values.to_numpy(False)
-            else:
+            elif not isinstance(chunk, np.ndarray):
                 values = chunk.to_numpy(False)
+            else:
+                values = chunk
+
             data[i, : len(chunk)] = values.reshape((len(chunk), *last_shape))
             stats_dict[name] = data[:, n_tune:]
             stats_dict_tune[name] = data[:, :n_tune]
